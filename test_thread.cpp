@@ -21,14 +21,11 @@ void uni_lock(int &n)
 	cnt++;
 }
 
-#define BUF_SIZE 6
-
 void multi_select()
 {
 	fd_set rd_fd;
 	struct timeval tv;
 	int ret;
-	char buf[BUF_SIZE];
 	std::thread::id thread_id = std::this_thread::get_id();
 
 
@@ -37,28 +34,46 @@ void multi_select()
 		FD_ZERO(&rd_fd);
 		FD_SET(std_in, &rd_fd);
 		// reset timeval
-		tv.tv_sec = 5;
+		tv.tv_sec = 15;
 		tv.tv_usec = 0;
-		// reset buffer
-		bzero(&buf, BUF_SIZE);
-
-		ret = select(std_in + 1, &rd_fd, NULL, NULL, &tv);
 
 		std::unique_lock<std::mutex> ulock(print_mutex);
+		ret = select(std_in + 1, &rd_fd, NULL, NULL, &tv);
 		cout << "[" << thread_id <<  ", ret=" << ret << "]" << flush;
 
 		if (ret == 0) {
-			cout << "select time out.\n";
+			cout << "select time out." << endl;
 		}else if (ret < 0) {
-			cout << "select error.\n";
+			cout << "select error." << endl;
 		}else {
 			if (FD_ISSET(std_in, &rd_fd)) {
 				ssize_t rd_size;
-				rd_size = read(std_in, &buf, BUF_SIZE - 2);
-				buf[BUF_SIZE - 1] = '\0';
+				char ch;
 
-				cout << "read() return " << rd_size << ", ";
-				printf("'%s'\n", buf);
+				/*
+				 * stdin is a stream, thus the read()
+				 * won't return 0 because it could al-
+				 * ways expects the user to type some
+				 * characters into stdin.
+				 */
+				while (rd_size = read(std_in, &ch, 1)) {
+					cout << ch;
+					if (ch == '\n')
+						break;
+				}
+
+				/*
+				 * Before we 'trap into' the time-
+				 * consuming actual work, release
+				 * the uni-lock. So that other
+				 * threads could acquire the lock
+				 * and do select().
+				 */
+				ulock.unlock();
+				// working...
+				const unsigned int work_dura = 5000;
+				std::chrono::milliseconds dura(work_dura);
+				std::this_thread::sleep_for(dura);
 			}
 		}
 	}
@@ -95,6 +110,7 @@ int main(int argc, char **argv)
 	// has been finished
 	while(pool->hasRemain()){}
 	pool->stop();
+	delete pool;
 
 	return 0;
 }
