@@ -12,4 +12,4 @@ thread: $(THREAD_SRC)
 	$(CC) $(CFLAGS) $(THREAD_SRC) -o thread -pthread
 
 clear:
-	-@rm thread pool
+	-@rm *.out core
