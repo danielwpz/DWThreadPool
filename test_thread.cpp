@@ -127,12 +127,9 @@ void multi_epoll()
 			cout << "ERR: epoll_wait() failed.\n";
 			continue;
 		}else if (nfds == 0) {
-			slog("epoll_wait() timeout.\n");	
+			// slog("epoll_wait() timeout.\n");	
 			continue;
 		}
-
-		std::string str = "epoll_wait() returns. ";
-		slog(str);
 
 		/**
 		 * Since the mode is set to be edge-triggerd,
@@ -140,14 +137,16 @@ void multi_epoll()
 		 * able fds given by epoll.
 		 */
 		for (i = 0; i < nfds; i++) {
+			slog("");
 			if (events[i].events & EPOLLIN) {
 				char c;
 				while(read(0, &c, 1) >= 0) {
-					cout << c;
+					if (c != '\n')
+						cout << c;
 				}
-				if (errno == EAGAIN)
-					slog("read EAGAIN\n", false);
-				slog("read over.\n", false);
+				cout << endl;
+				if (errno != EAGAIN)
+					slog("read failed but not EAGAIN\n", true);
 
 				// rearm event source in epoll queue
 				// (because of EPOLLONESHOT
@@ -158,9 +157,14 @@ void multi_epoll()
 					cout << "ERR: epoll_ctl() modify failed.\n";
 
 				// working...
-				slog("sleep...\n");
+				/* TODO: uncomment this will cause each
+				 *		 thread to sleep for a while,
+				 *		 which forces another thread to
+				 *		 wait for epoll events, and this
+				 *		 enables you to see self-scheduling 
+				 *		 more clearly.
+				 */
 				thread_sleep(15000);
-				slog("awake\n");
 			}
 		}
 	}	
