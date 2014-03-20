@@ -140,18 +140,28 @@ void multi_epoll()
 		 * able fds given by epoll.
 		 */
 		for (i = 0; i < nfds; i++) {
-			char c;
-			while(read(0, &c, 1) >= 0) {
-				cout << c;
-			}
-			if (errno == EAGAIN)
-				slog("read EAGAIN\n", false);
-			slog("read over.\n", false);
+			if (events[i].events & EPOLLIN) {
+				char c;
+				while(read(0, &c, 1) >= 0) {
+					cout << c;
+				}
+				if (errno == EAGAIN)
+					slog("read EAGAIN\n", false);
+				slog("read over.\n", false);
 
-			// working...
-			slog("sleep...\n");
-			thread_sleep(15000);
-			slog("awake\n");
+				// rearm event source in epoll queue
+				// (because of EPOLLONESHOT
+				struct epoll_event ev;
+				ev.events = EPOLLIN | EPOLLONESHOT;
+
+				if (epoll_ctl(g_epollfd, EPOLL_CTL_MOD, std_in, &ev) < 0)
+					cout << "ERR: epoll_ctl() modify failed.\n";
+
+				// working...
+				slog("sleep...\n");
+				thread_sleep(15000);
+				slog("awake\n");
+			}
 		}
 	}	
 }
@@ -177,14 +187,14 @@ int main(int argc, char **argv)
 
 	// init the epoll envoriment
 	struct epoll_event ev;
-	ev.events = EPOLLIN | EPOLLET;
+	ev.events = EPOLLIN | EPOLLONESHOT;
 
 	g_epollfd = epoll_create(MAX_EVENTS);
 	if (g_epollfd <= 0)
 		cout << "ERR: epoll_create() failed.\n";
 
 	if (epoll_ctl(g_epollfd, EPOLL_CTL_ADD, std_in, &ev) < 0)
-		cout << "ERR: epoll_ctl() failed.\n";
+		cout << "ERR: epoll_ctl() add failed.\n";
 
 	// init the thread pool
 	DWThreadPool *pool;
