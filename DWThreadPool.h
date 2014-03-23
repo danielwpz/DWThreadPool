@@ -33,9 +33,23 @@ using namespace std;
 
 typedef std::function<void()> Task;
 
-#define LIGHT_BURDEN_POOL_SIZE		16
-#define DEFAULT_BURDEN_POOL_SIZE	64 
-#define HEAVY_BURDEN_POOL_SIZE		256
+/**
+ * In real world, you should configure the
+ * following parameters to best fit your
+ * device.
+ *
+ * The pool_size should be between 1 to 2
+ * times of the number of CPUs in your 
+ * computer.
+ *
+ * The max_task should be between 1 to 2
+ * times of the maximum number of pending
+ * tasks, you can resolve it according to 
+ * your design.
+ */
+#define LIGHT_BURDEN_POOL_SIZE		4
+#define DEFAULT_BURDEN_POOL_SIZE	6 
+#define HEAVY_BURDEN_POOL_SIZE		8
 
 #define LIGHT_BURDEN_MAX_TASK		64
 #define DEFAULT_BURDEN_MAX_TASK		256

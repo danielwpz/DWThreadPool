@@ -11,5 +11,5 @@ pool: $(POOL_SRC) $(THREAD_SRC)
 thread: $(THREAD_SRC)
 	$(CC) $(CFLAGS) $(THREAD_SRC) -o thread -pthread
 
-clear:
-	-@rm thread pool
+clean:
+	-@rm *.out core
