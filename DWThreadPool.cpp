@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include <iostream>
 #include "DWThreadPool.h"
 
 /**
@@ -40,6 +41,7 @@ void DWThreadPool::start() throw (std::runtime_error)
 		}
 	} catch(std::exception &e) {
 		stop();
+		std::cerr << e.what();
 		std::runtime_error fail("Failed to init thread pool. Stopped.");	
 		throw fail;
 	}
